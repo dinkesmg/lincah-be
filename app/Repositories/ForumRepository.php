@@ -52,6 +52,7 @@ class ForumRepository
             'topik_id' => 'required',
             'judul' => 'required',
             'hasil' => 'required',
+            'tanggal' => 'required',
             'rencana_tindak_lanjut' => 'required',
             'link_dokumentasi' => 'nullable',
         ];

@@ -70,6 +70,16 @@
                         </div>
                         @endif
                         <div class="row mb-3">
+                            <label class="col-sm-2 col-form-label" for="tanggal">Tanggal</label>
+                            <div class="col-sm-10">
+                                {{html()->date('tanggal', isset($forum) ? $forum->tanggal : @old('tanggal', date('Y-m-d')))->class('form-control')->placeholder('Masukkan Tanggal')->required(true)}}
+                                @error('tanggal')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
                             <label class="col-sm-2 col-form-label" for="judul">Judul Diskusi</label>
                             <div class="col-sm-10">
                                 {{html()->text('judul', isset($forum) ? $forum->judul : @old('judul'))->class('form-control')->placeholder('Masukkan Judul')->required(true)}}

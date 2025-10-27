@@ -14,7 +14,7 @@ class Forum extends Model implements Auditable
 
     protected $table = 'forums';
 
-    protected $fillable = ["uuid", "user_id", "foto", "judul", "hasil", "topik_id", "kecamatan_id", "rencana_tindak_lanjut", "link_dokumentasi"];
+    protected $fillable = ["uuid", "user_id", "foto", "judul", "tanggal", "hasil", "topik_id", "kecamatan_id", "rencana_tindak_lanjut", "link_dokumentasi"];
 
     protected $appends = ["foto_url"];
 
