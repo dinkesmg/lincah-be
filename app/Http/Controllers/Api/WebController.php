@@ -30,6 +30,7 @@ use App\Models\JenisKasus;
 use App\Models\User;
 use App\Models\Linsek;
 use App\Models\Data;
+use App\Models\DataRt;
 use App\Models\Foto;
 use App\Models\Video;
 use App\Models\Topik;
@@ -811,6 +812,528 @@ class WebController extends Controller
 
         return ResponseFormatter::success([
             'berita' => BeritaDetailResource::make($berita),
+        ], 'Get Data Berhasil');
+    }
+
+    //DATA RT
+    
+    public function spasialAllRt(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+
+        $kelurahanList = Kelurahan::query()
+            ->when($request->kecamatan_id, fn($q) => $q->where('kecamatan_id', $request->kecamatan_id))
+            ->when($request->kelurahan_id, fn($q) => $q->where('id', $request->kelurahan_id))
+            ->get();
+
+        $dataKasus = Data::query()
+            ->when($request->kecamatan_id, fn($q) => $q->where('kecamatan_id', $request->kecamatan_id))
+            ->when($request->kelurahan_id, fn($q) => $q->where('kelurahan_id', $request->kelurahan_id))
+            ->when($request->jenis_resiko_id, fn($q) => $q->where('jenis_kasus_id', $request->jenis_resiko_id))
+            ->where('tahun', $tahun)
+            ->select(
+                'kelurahan_id',
+                DB::raw('SUM(kerentanan) as total_kerentanan'),
+                DB::raw('SUM(keterpaparan) as total_keterpaparan'),
+                DB::raw('SUM(potensial_dampak) as total_potensial_dampak'),
+                DB::raw('COUNT(*) as jumlah_kasus')
+            )
+            ->groupBy('kelurahan_id')
+            ->get()
+            ->keyBy('kelurahan_id');
+
+        $jenisKasus = $request->jenis_resiko_id
+            ? JenisKasus::find($request->jenis_resiko_id)
+            : null;
+
+        $result = $kelurahanList->map(function ($kelurahan) use ($dataKasus, $tahun, $jenisKasus) {
+            $data = $dataKasus[$kelurahan->id] ?? null;
+
+            return (object) [
+                'id' => $kelurahan->id,
+                'nama_kelurahan' => $kelurahan->nama,
+                'nama_kecamatan' => $kelurahan->kecamatan->nama ?? null,
+                'tahun' => (int) $tahun,
+                'jenisKasus' => $jenisKasus->nama ?? 'Semua Jenis Resiko',
+                'kerentanan' => (int) ($data->total_kerentanan ?? 0),
+                'keterpaparan' => (int) ($data->total_keterpaparan ?? 0),
+                'potensial_dampak' => (int) ($data->total_potensial_dampak ?? 0),
+                'jumlah_kasus' => (int) ($data->jumlah_kasus ?? 0),
+            ];
+        });
+
+        return ResponseFormatter::success([
+            'spasial' => DataSpasialResource::collection($result),
+        ], 'Get Data Berhasil');
+    }
+    
+    public function spasialJumlahKasusRt(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+
+        $kelurahanList = Kelurahan::when($request->kecamatan_id, function ($q) use ($request) {
+            $q->where('kecamatan_id', $request->kecamatan_id);
+        })->when($request->kelurahan_id, function ($q) use ($request) {
+            $q->where('id', $request->kelurahan_id);
+        })->get();
+
+        $dataKasus = Data::query()
+            ->when($request->kecamatan_id, function ($q) use ($request) {
+                $q->where('kecamatan_id', $request->kecamatan_id);
+            })
+            ->when($request->kelurahan_id, function ($q) use ($request) {
+                $q->where('kelurahan_id', $request->kelurahan_id);
+            })
+            ->when($request->jenis_resiko_id, function ($q) use ($request) {
+                $q->where('jenis_kasus_id', $request->jenis_resiko_id);
+            })
+            ->where('tahun', $tahun)
+            ->select('kelurahan_id', DB::raw('SUM(jumlah_kasus) as total_kasus'))
+            ->groupBy('kelurahan_id')
+            ->pluck('total_kasus', 'kelurahan_id');
+
+        $jenisKasus = null;
+        if ($request->jenis_resiko_id) {
+            $jenisKasus = JenisKasus::find($request->jenis_resiko_id);
+        }
+
+        $result = $kelurahanList->map(function ($kelurahan) use ($dataKasus, $tahun, $jenisKasus) {
+            $jumlahKasus = $dataKasus[$kelurahan->id] ?? 0;
+            return (object) [
+                'id' => $kelurahan->id,
+                'kecamatan' => $kelurahan->kecamatan,
+                'kelurahan' => $kelurahan,
+                'tahun' => (int) $tahun,
+                'jenisKasus' => $jenisKasus->nama ?? 'Semua Jenis Resiko',
+                'jumlah_kasus' => (int) $jumlahKasus ?? 0,
+            ];
+        });
+
+        return ResponseFormatter::success([
+            'spasial' => DataSpasialResource::collection($result),
+        ], 'Get Data Berhasil');
+    }
+    
+    public function spasialKerentananRt(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+
+        $kelurahanList = Kelurahan::when($request->kecamatan_id, function ($q) use ($request) {
+            $q->where('kecamatan_id', $request->kecamatan_id);
+        })->when($request->kelurahan_id, function ($q) use ($request) {
+            $q->where('id', $request->kelurahan_id);
+        })->get();
+
+        $dataKasus = Data::query()
+            ->when($request->kecamatan_id, function ($q) use ($request) {
+                $q->where('kecamatan_id', $request->kecamatan_id);
+            })
+            ->when($request->kelurahan_id, function ($q) use ($request) {
+                $q->where('kelurahan_id', $request->kelurahan_id);
+            })
+            ->when($request->jenis_resiko_id, function ($q) use ($request) {
+                $q->where('jenis_kasus_id', $request->jenis_resiko_id);
+            })
+            ->where('tahun', $tahun)
+            ->select('kelurahan_id', DB::raw('SUM(kerentanan) as total_kasus'))
+            ->groupBy('kelurahan_id')
+            ->pluck('total_kasus', 'kelurahan_id');
+
+        $jenisKasus = null;
+        if ($request->jenis_resiko_id) {
+            $jenisKasus = JenisKasus::find($request->jenis_resiko_id);
+        }
+
+        $result = $kelurahanList->map(function ($kelurahan) use ($dataKasus, $tahun, $jenisKasus) {
+            $jumlahKasus = $dataKasus[$kelurahan->id] ?? 0;
+            return (object) [
+                'id' => $kelurahan->id,
+                'kecamatan' => $kelurahan->kecamatan,
+                'kelurahan' => $kelurahan,
+                'tahun' => (int) $tahun,
+                'jenisKasus' => $jenisKasus->nama ?? 'Semua Jenis Resiko',
+                'jumlah_kasus' => (int) $jumlahKasus ?? 0,
+            ];
+        });
+
+        return ResponseFormatter::success([
+            'spasial' => DataSpasialResource::collection($result),
+        ], 'Get Data Berhasil');
+    }
+    
+    public function spasialKeterpaparanRt(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+
+        $kelurahanList = Kelurahan::when($request->kecamatan_id, function ($q) use ($request) {
+            $q->where('kecamatan_id', $request->kecamatan_id);
+        })->when($request->kelurahan_id, function ($q) use ($request) {
+            $q->where('id', $request->kelurahan_id);
+        })->get();
+
+        $dataKasus = Data::query()
+            ->when($request->kecamatan_id, function ($q) use ($request) {
+                $q->where('kecamatan_id', $request->kecamatan_id);
+            })
+            ->when($request->kelurahan_id, function ($q) use ($request) {
+                $q->where('kelurahan_id', $request->kelurahan_id);
+            })
+            ->when($request->jenis_resiko_id, function ($q) use ($request) {
+                $q->where('jenis_kasus_id', $request->jenis_resiko_id);
+            })
+            ->where('tahun', $tahun)
+            ->select('kelurahan_id', DB::raw('SUM(keterpaparan) as total_kasus'))
+            ->groupBy('kelurahan_id')
+            ->pluck('total_kasus', 'kelurahan_id');
+
+        $jenisKasus = null;
+        if ($request->jenis_resiko_id) {
+            $jenisKasus = JenisKasus::find($request->jenis_resiko_id);
+        }
+
+        $result = $kelurahanList->map(function ($kelurahan) use ($dataKasus, $tahun, $jenisKasus) {
+            $jumlahKasus = $dataKasus[$kelurahan->id] ?? 0;
+            return (object) [
+                'id' => $kelurahan->id,
+                'kecamatan' => $kelurahan->kecamatan,
+                'kelurahan' => $kelurahan,
+                'tahun' => (int) $tahun,
+                'jenisKasus' => $jenisKasus->nama ?? 'Semua Jenis Resiko',
+                'jumlah_kasus' => (int) $jumlahKasus ?? 0,
+            ];
+        });
+
+        return ResponseFormatter::success([
+            'spasial' => DataSpasialResource::collection($result),
+        ], 'Get Data Berhasil');
+    }
+    
+    public function spasialPotensialDampakRt(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+
+        $kelurahanList = Kelurahan::when($request->kecamatan_id, function ($q) use ($request) {
+            $q->where('kecamatan_id', $request->kecamatan_id);
+        })->when($request->kelurahan_id, function ($q) use ($request) {
+            $q->where('id', $request->kelurahan_id);
+        })->get();
+
+        $dataKasus = Data::query()
+            ->when($request->kecamatan_id, function ($q) use ($request) {
+                $q->where('kecamatan_id', $request->kecamatan_id);
+            })
+            ->when($request->kelurahan_id, function ($q) use ($request) {
+                $q->where('kelurahan_id', $request->kelurahan_id);
+            })
+            ->when($request->jenis_resiko_id, function ($q) use ($request) {
+                $q->where('jenis_kasus_id', $request->jenis_resiko_id);
+            })
+            ->where('tahun', $tahun)
+            ->select('kelurahan_id', DB::raw('SUM(potensial_dampak) as total_kasus'))
+            ->groupBy('kelurahan_id')
+            ->pluck('total_kasus', 'kelurahan_id');
+
+        $jenisKasus = null;
+        if ($request->jenis_resiko_id) {
+            $jenisKasus = JenisKasus::find($request->jenis_resiko_id);
+        }
+
+        $result = $kelurahanList->map(function ($kelurahan) use ($dataKasus, $tahun, $jenisKasus) {
+            $jumlahKasus = $dataKasus[$kelurahan->id] ?? 0;
+            return (object) [
+                'id' => $kelurahan->id,
+                'kecamatan' => $kelurahan->kecamatan,
+                'kelurahan' => $kelurahan,
+                'tahun' => (int) $tahun,
+                'jenisKasus' => $jenisKasus->nama ?? 'Semua Jenis Resiko',
+                'jumlah_kasus' => (int) $jumlahKasus ?? 0,
+            ];
+        });
+
+        return ResponseFormatter::success([
+            'spasial' => DataSpasialResource::collection($result),
+        ], 'Get Data Berhasil');
+    }
+    
+    public function allRt(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+
+        $jenisKasus = $request->jenis_resiko_id
+            ? JenisKasus::find($request->jenis_resiko_id)
+            : null;
+
+        $dataKasus = Data::query()
+            ->when($request->kecamatan_id, fn($q) => $q->where('kecamatan_id', $request->kecamatan_id))
+            ->when($request->kelurahan_id, fn($q) => $q->where('kelurahan_id', $request->kelurahan_id))
+            ->when($request->jenis_resiko_id, fn($q) => $q->where('jenis_kasus_id', $request->jenis_resiko_id))
+            ->where('tahun', $tahun)
+            ->select(
+                'bulan',
+                DB::raw('SUM(kerentanan) as total_kerentanan'),
+                DB::raw('SUM(keterpaparan) as total_keterpaparan'),
+                DB::raw('SUM(potensial_dampak) as total_potensial_dampak'),
+                DB::raw('COUNT(*) as jumlah_kasus')
+            )
+            ->groupBy('bulan')
+            ->get()
+            ->keyBy('bulan');
+
+        $result = collect(range(1, 12))->map(function ($bulan) use ($dataKasus, $tahun, $jenisKasus) {
+            $namaBulan = Carbon::createFromDate($tahun, $bulan, 1)
+                ->locale('id')
+                ->translatedFormat('F');
+
+            $data = $dataKasus[$bulan] ?? null;
+
+            return (object) [
+                'bulan' => $bulan,
+                'nama_bulan' => ucfirst($namaBulan),
+                'tahun' => (int) $tahun,
+                'jenisKasus' => $jenisKasus->nama ?? 'Semua Jenis Resiko',
+                'kerentanan' => (int) ($data->total_kerentanan ?? 0),
+                'keterpaparan' => (int) ($data->total_keterpaparan ?? 0),
+                'potensial_dampak' => (int) ($data->total_potensial_dampak ?? 0),
+                'jumlah_kasus' => (int) ($data->jumlah_kasus ?? 0),
+            ];
+        });
+
+        return ResponseFormatter::success([
+            'stats' => DataStatistikResource::collection($result),
+        ], 'Get Data Berhasil');
+    }
+    
+    public function jumlahKasusRt(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+
+        $jenisKasus = null;
+        if ($request->jenis_resiko_id) {
+            $jenisKasus = JenisKasus::find($request->jenis_resiko_id);
+        }
+
+        $dataKasus = Data::query()
+            ->when($request->kecamatan_id, function ($q) use ($request) {
+                $q->where('kecamatan_id', $request->kecamatan_id);
+            })
+            ->when($request->kelurahan_id, function ($q) use ($request) {
+                $q->where('kelurahan_id', $request->kelurahan_id);
+            })
+            ->when($request->jenis_resiko_id, function ($q) use ($request) {
+                $q->where('jenis_kasus_id', $request->jenis_resiko_id);
+            })
+            ->where('tahun', $tahun)
+            ->select('bulan', DB::raw('SUM(jumlah_kasus) as total_kasus'))
+            ->groupBy('bulan')
+            ->pluck('total_kasus', 'bulan');
+
+        $result = collect(range(1, 12))->map(function ($bulan) use ($dataKasus, $tahun, $jenisKasus) {
+            $namaBulan = Carbon::createFromDate($tahun, $bulan, 1)
+                ->locale('id')
+                ->translatedFormat('F');
+
+            $jumlahKasus = $dataKasus[$bulan] ?? 0;
+
+            return (object) [
+                'bulan' => $bulan,
+                'nama_bulan' => ucfirst($namaBulan),
+                'tahun' => (int) $tahun,
+                'jenisKasus' => $jenisKasus->nama ?? 'Semua Jenis Resiko',
+                'jumlah_kasus' => (int) $jumlahKasus ?? 0,
+            ];
+        });
+
+        return ResponseFormatter::success([
+            'stats' => DataStatistikResource::collection($result),
+        ], 'Get Data Berhasil');
+    }
+    
+    public function kerentananRt(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+
+        $jenisKasus = null;
+        if ($request->jenis_resiko_id) {
+            $jenisKasus = JenisKasus::find($request->jenis_resiko_id);
+        }
+
+        $dataKasus = Data::query()
+            ->when($request->kecamatan_id, function ($q) use ($request) {
+                $q->where('kecamatan_id', $request->kecamatan_id);
+            })
+            ->when($request->kelurahan_id, function ($q) use ($request) {
+                $q->where('kelurahan_id', $request->kelurahan_id);
+            })
+            ->when($request->jenis_resiko_id, function ($q) use ($request) {
+                $q->where('jenis_kasus_id', $request->jenis_resiko_id);
+            })
+            ->where('tahun', $tahun)
+            ->select('bulan', DB::raw('SUM(kerentanan) as total_kasus'))
+            ->groupBy('bulan')
+            ->pluck('total_kasus', 'bulan');
+
+        $result = collect(range(1, 12))->map(function ($bulan) use ($dataKasus, $tahun, $jenisKasus) {
+            $namaBulan = Carbon::createFromDate($tahun, $bulan, 1)
+                ->locale('id')
+                ->translatedFormat('F');
+
+            $jumlahKasus = $dataKasus[$bulan] ?? 0;
+
+            return (object) [
+                'bulan' => $bulan,
+                'nama_bulan' => ucfirst($namaBulan),
+                'tahun' => (int) $tahun,
+                'jenisKasus' => $jenisKasus->nama ?? 'Semua Jenis Resiko',
+                'jumlah_kasus' => (int) $jumlahKasus ?? 0,
+            ];
+        });
+
+        return ResponseFormatter::success([
+            'stats' => DataStatistikResource::collection($result),
+        ], 'Get Data Berhasil');
+    }
+    
+    public function keterpaparanRt(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+
+        $jenisKasus = null;
+        if ($request->jenis_resiko_id) {
+            $jenisKasus = JenisKasus::find($request->jenis_resiko_id);
+        }
+
+        $dataKasus = Data::query()
+            ->when($request->kecamatan_id, function ($q) use ($request) {
+                $q->where('kecamatan_id', $request->kecamatan_id);
+            })
+            ->when($request->kelurahan_id, function ($q) use ($request) {
+                $q->where('kelurahan_id', $request->kelurahan_id);
+            })
+            ->when($request->jenis_resiko_id, function ($q) use ($request) {
+                $q->where('jenis_kasus_id', $request->jenis_resiko_id);
+            })
+            ->where('tahun', $tahun)
+            ->select('bulan', DB::raw('SUM(keterpaparan) as total_kasus'))
+            ->groupBy('bulan')
+            ->pluck('total_kasus', 'bulan');
+
+        $result = collect(range(1, 12))->map(function ($bulan) use ($dataKasus, $tahun, $jenisKasus) {
+            $namaBulan = Carbon::createFromDate($tahun, $bulan, 1)
+                ->locale('id')
+                ->translatedFormat('F');
+
+            $jumlahKasus = $dataKasus[$bulan] ?? 0;
+
+            return (object) [
+                'bulan' => $bulan,
+                'nama_bulan' => ucfirst($namaBulan),
+                'tahun' => (int) $tahun,
+                'jenisKasus' => $jenisKasus->nama ?? 'Semua Jenis Resiko',
+                'jumlah_kasus' => (int) $jumlahKasus ?? 0,
+            ];
+        });
+
+        return ResponseFormatter::success([
+            'stats' => DataStatistikResource::collection($result),
+        ], 'Get Data Berhasil');
+    }
+    
+    public function potensialDampakRt(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+
+        $jenisKasus = null;
+        if ($request->jenis_resiko_id) {
+            $jenisKasus = JenisKasus::find($request->jenis_resiko_id);
+        }
+
+        $dataKasus = Data::query()
+            ->when($request->kecamatan_id, function ($q) use ($request) {
+                $q->where('kecamatan_id', $request->kecamatan_id);
+            })
+            ->when($request->kelurahan_id, function ($q) use ($request) {
+                $q->where('kelurahan_id', $request->kelurahan_id);
+            })
+            ->when($request->jenis_resiko_id, function ($q) use ($request) {
+                $q->where('jenis_kasus_id', $request->jenis_resiko_id);
+            })
+            ->where('tahun', $tahun)
+            ->select('bulan', DB::raw('SUM(potensial_dampak) as total_kasus'))
+            ->groupBy('bulan')
+            ->pluck('total_kasus', 'bulan');
+
+        $result = collect(range(1, 12))->map(function ($bulan) use ($dataKasus, $tahun, $jenisKasus) {
+            $namaBulan = Carbon::createFromDate($tahun, $bulan, 1)
+                ->locale('id')
+                ->translatedFormat('F');
+
+            $jumlahKasus = $dataKasus[$bulan] ?? 0;
+
+            return (object) [
+                'bulan' => $bulan,
+                'nama_bulan' => ucfirst($namaBulan),
+                'tahun' => (int) $tahun,
+                'jenisKasus' => $jenisKasus->nama ?? 'Semua Jenis Resiko',
+                'jumlah_kasus' => (int) $jumlahKasus ?? 0,
+            ];
+        });
+
+        return ResponseFormatter::success([
+            'stats' => DataStatistikResource::collection($result),
+        ], 'Get Data Berhasil');
+    }
+    
+    public function tabelDataRt(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+
+        $kelurahanList = Kelurahan::when($request->kecamatan_id, function ($q) use ($request) {
+            $q->where('kecamatan_id', $request->kecamatan_id);
+        })->when($request->kelurahan_id, function ($q) use ($request) {
+            $q->where('id', $request->kelurahan_id);
+        })->get();
+
+        $dataKasus = Data::query()
+            ->when($request->kecamatan_id, function ($q) use ($request) {
+                $q->where('kecamatan_id', $request->kecamatan_id);
+            })
+            ->when($request->jenis_resiko_id, function ($q) use ($request) {
+                $q->where('jenis_kasus_id', $request->jenis_resiko_id);
+            })
+            ->where('tahun', $tahun)
+            ->select(
+                'kelurahan_id',
+                DB::raw('SUM(jumlah_kasus) as total_kasus'),
+                DB::raw('SUM(keterpaparan) as total_keterpaparan'),
+                DB::raw('SUM(kerentanan) as total_kerentanan'),
+                DB::raw('SUM(potensial_dampak) as total_potensial_dampak')
+            )
+            ->groupBy('kelurahan_id')
+            ->get()
+            ->keyBy('kelurahan_id');
+
+        $jenisKasus = $request->jenis_resiko_id
+            ? JenisKasus::find($request->jenis_resiko_id)
+            : null;
+
+        $result = $kelurahanList->map(function ($kelurahan) use ($dataKasus, $tahun, $jenisKasus) {
+            $kasus = $dataKasus[$kelurahan->id] ?? null;
+
+            return (object) [
+                'id' => $kelurahan->id,
+                'kecamatan' => $kelurahan->kecamatan,
+                'kelurahan' => $kelurahan,
+                'tahun' => (int) $tahun,
+                'jenisKasus' => $jenisKasus->nama ?? 'Semua Jenis Resiko',
+                'jumlah_kasus' => $kasus->total_kasus ?? 0,
+                'keterpaparan' => $kasus->total_keterpaparan ?? 0,
+                'kerentanan' => $kasus->total_kerentanan ?? 0,
+                'potensial_dampak' => $kasus->total_potensial_dampak ?? 0,
+            ];
+        });
+
+        return ResponseFormatter::success([
+            'spasial' => TabelDataResource::collection($result),
         ], 'Get Data Berhasil');
     }
 }

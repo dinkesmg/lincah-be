@@ -24,6 +24,7 @@ Route::middleware('api_key')->group(function () {
     Route::get('jenis-resiko', [WebController::class, 'jenisResiko']);
     Route::get('tahun', [WebController::class, 'tahun']);
 
+    //KELURAHAN
     Route::get('data/all', [WebController::class, 'all']);
     Route::get('data/kerentanan', [WebController::class, 'kerentanan']);
     Route::get('data/keterpaparan', [WebController::class, 'keterpaparan']);
@@ -35,8 +36,22 @@ Route::middleware('api_key')->group(function () {
     Route::get('spasial/keterpaparan', [WebController::class, 'spasialKeterpaparan']);
     Route::get('spasial/potensial-dampak', [WebController::class, 'spasialPotensialDampak']);
     Route::get('spasial/jumlah-kasus', [WebController::class, 'spasialJumlahKasus']);
+
+    //RT
+    Route::get('data/all-rt', [WebController::class, 'allRt']);
+    Route::get('data/kerentanan-rt', [WebController::class, 'kerentananRt']);
+    Route::get('data/keterpaparan-rt', [WebController::class, 'keterpaparanRt']);
+    Route::get('data/potensial-dampak-rt', [WebController::class, 'potensialDampakRt']);
+    Route::get('data/jumlah-kasus-rt', [WebController::class, 'jumlahKasusRt']);
+    
+    Route::get('spasial/all-rt', [WebController::class, 'spasialAllRt']);
+    Route::get('spasial/kerentanan-rt', [WebController::class, 'spasialKerentananRt']);
+    Route::get('spasial/keterpaparan-rt', [WebController::class, 'spasialKeterpaparanRt']);
+    Route::get('spasial/potensial-dampak-rt', [WebController::class, 'spasialPotensialDampakRt']);
+    Route::get('spasial/jumlah-kasus-rt', [WebController::class, 'spasialJumlahKasusRt']);
     
     Route::get('tabel-data', [WebController::class, 'tabelData']);
+    Route::get('tabel-data-rt', [WebController::class, 'tabelDataRt']);
     
     Route::get('publikasi', [WebController::class, 'publikasi']);
     Route::get('publikasi/foto', [WebController::class, 'publikasiFoto']);
