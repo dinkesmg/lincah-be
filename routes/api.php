@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::middleware('api_key')->group(function () {
+    //MASTER
     Route::get('stats', [WebController::class, 'stats']);
     Route::get('linsek', [WebController::class, 'linsek']);
     Route::get('kecamatan', [WebController::class, 'kecamatan']);
@@ -36,23 +37,13 @@ Route::middleware('api_key')->group(function () {
     Route::get('spasial/keterpaparan', [WebController::class, 'spasialKeterpaparan']);
     Route::get('spasial/potensial-dampak', [WebController::class, 'spasialPotensialDampak']);
     Route::get('spasial/jumlah-kasus', [WebController::class, 'spasialJumlahKasus']);
-
-    //RT
-    Route::get('data/all-rt', [WebController::class, 'allRt']);
-    Route::get('data/kerentanan-rt', [WebController::class, 'kerentananRt']);
-    Route::get('data/keterpaparan-rt', [WebController::class, 'keterpaparanRt']);
-    Route::get('data/potensial-dampak-rt', [WebController::class, 'potensialDampakRt']);
-    Route::get('data/jumlah-kasus-rt', [WebController::class, 'jumlahKasusRt']);
-    
-    Route::get('spasial/all-rt', [WebController::class, 'spasialAllRt']);
-    Route::get('spasial/kerentanan-rt', [WebController::class, 'spasialKerentananRt']);
-    Route::get('spasial/keterpaparan-rt', [WebController::class, 'spasialKeterpaparanRt']);
-    Route::get('spasial/potensial-dampak-rt', [WebController::class, 'spasialPotensialDampakRt']);
-    Route::get('spasial/jumlah-kasus-rt', [WebController::class, 'spasialJumlahKasusRt']);
     
     Route::get('tabel-data', [WebController::class, 'tabelData']);
+
+    //RT
     Route::get('tabel-data-rt', [WebController::class, 'tabelDataRt']);
     
+    //CONTENT
     Route::get('publikasi', [WebController::class, 'publikasi']);
     Route::get('publikasi/foto', [WebController::class, 'publikasiFoto']);
     Route::get('publikasi/video', [WebController::class, 'publikasiVideo']);

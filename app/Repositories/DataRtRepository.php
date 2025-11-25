@@ -53,7 +53,7 @@ class DataRtRepository
             'kerentanan' => 'required',
             'potensial_dampak' => 'required',
             'jumlah_kasus' => 'required',
-            'image' => 'required',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ];
         if($isUpdate){
             if ($id) {

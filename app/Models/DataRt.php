@@ -15,7 +15,7 @@ class DataRt extends Model implements Auditable
 
     protected $table = 'data_rts';
 
-    protected $fillable = ["uuid", "bulan", "tahun", "kecamatan_id", "kelurahan_id", "rw_id", "rt_id", "jenis_kasus_id", "keterpaparan", "kerentanan", "potensial_dampak", "jumlah_kasus"];
+    protected $fillable = ["uuid", "bulan", "tahun", "kecamatan_id", "kelurahan_id", "rw_id", "rt_id", "jenis_kasus_id", "keterpaparan", "kerentanan", "potensial_dampak", "jumlah_kasus", "image"];
 
     
 
@@ -63,6 +63,16 @@ class DataRt extends Model implements Auditable
     public function kelurahan()
     {
         return $this->belongsTo(Kelurahan::class);
+    }
+
+    public function rw()
+    {
+        return $this->belongsTo(RW::class);
+    }
+
+    public function rt()
+    {
+        return $this->belongsTo(RT::class);
     }
 
     public function jenisKasus()
