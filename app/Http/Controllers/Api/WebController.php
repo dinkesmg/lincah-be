@@ -16,6 +16,7 @@ use App\Http\Resources\JenisKasusResource;
 use App\Http\Resources\DataSpasialResource;
 use App\Http\Resources\DataStatistikResource;
 use App\Http\Resources\TabelDataResource;
+use App\Http\Resources\TabelDataRtResource;
 use App\Http\Resources\PublikasiResource;
 use App\Http\Resources\KategoriDiskusiResource;
 use App\Http\Resources\ForumResource;
@@ -26,10 +27,12 @@ use App\Http\Resources\BeritaDetailResource;
 
 use App\Models\Kecamatan;
 use App\Models\Kelurahan;
+use App\Models\RT;
 use App\Models\JenisKasus;
 use App\Models\User;
 use App\Models\Linsek;
 use App\Models\Data;
+use App\Models\DataRt;
 use App\Models\Foto;
 use App\Models\Video;
 use App\Models\Topik;
@@ -811,6 +814,80 @@ class WebController extends Controller
 
         return ResponseFormatter::success([
             'berita' => BeritaDetailResource::make($berita),
+        ], 'Get Data Berhasil');
+    }
+
+    //DATA RT
+    public function tabelDataRt(Request $request)
+    {
+        $tahun = $request->tahun ?? date('Y');
+
+        $rtList = RT::when($request->kecamatan_id, fn($q) =>
+                $q->where('kecamatan_id', $request->kecamatan_id)
+            )
+            ->when($request->kelurahan_id, fn($q) =>
+                $q->where('kelurahan_id', $request->kelurahan_id)
+            )
+            ->when($request->rw_id, fn($q) =>
+                $q->where('rw_id', $request->rw_id)
+            )
+            ->when($request->rt_id, fn($q) =>
+                $q->where('id', $request->rt_id)
+            )
+            ->get();
+
+        $dataKasus = DataRt::query()
+            ->when($request->kecamatan_id, fn($q) =>
+                $q->where('kecamatan_id', $request->kecamatan_id)
+            )
+            ->when($request->kelurahan_id, fn($q) =>
+                $q->where('kelurahan_id', $request->kelurahan_id)
+            )
+            ->when($request->rw_id, fn($q) =>
+                $q->where('rw_id', $request->rw_id)
+            )
+            ->when($request->rt_id, fn($q) =>
+                $q->where('rt_id', $request->rt_id)
+            )
+            ->when($request->jenis_resiko_id, fn($q) =>
+                $q->where('jenis_kasus_id', $request->jenis_resiko_id)
+            )
+            ->where('tahun', $tahun)
+            ->select(
+                'rt_id',
+                DB::raw('SUM(jumlah_kasus) as total_kasus'),
+                DB::raw('SUM(keterpaparan) as total_keterpaparan'),
+                DB::raw('SUM(kerentanan) as total_kerentanan'),
+                DB::raw('SUM(potensial_dampak) as total_potensial_dampak')
+            )
+            ->groupBy('rt_id')
+            ->get()
+            ->keyBy('rt_id');
+
+        $jenisKasus = $request->jenis_resiko_id
+            ? JenisKasus::find($request->jenis_resiko_id)
+            : null;
+
+        $result = $rtList->map(function ($rt) use ($dataKasus, $tahun, $jenisKasus) {
+            $kasus = $dataKasus[$rt->id] ?? null;
+
+            return (object) [
+                'id' => $rt->id,
+                'kecamatan' => $rt->kecamatan,
+                'kelurahan' => $rt->kelurahan,
+                'rw' => $rt->rw,
+                'rt' => $rt,
+                'tahun' => (int) $tahun,
+                'jenisKasus' => $jenisKasus->nama ?? 'Semua Jenis Resiko',
+                'jumlah_kasus' => $kasus->total_kasus ?? 0,
+                'keterpaparan' => $kasus->total_keterpaparan ?? 0,
+                'kerentanan' => $kasus->total_kerentanan ?? 0,
+                'potensial_dampak' => $kasus->total_potensial_dampak ?? 0,
+            ];
+        });
+
+        return ResponseFormatter::success([
+            'spasial' => TabelDataRtResource::collection($result),
         ], 'Get Data Berhasil');
     }
 }

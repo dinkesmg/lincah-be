@@ -38,7 +38,6 @@
             <span class="menu-header-text">Data</span>
         </li>
         {{-- CRUD-GENERATOR-SIDEBAR --}}
-                
         @can('forum-index')
             <li class="menu-item {{ request()->routeIs('forum.*') ? 'active' : '' }}">
                 <a href="{{ route('forum.index') }}" class="menu-link">
@@ -103,14 +102,50 @@
             $currentUuid = request()->route('jenis_kasus_uuid');
         @endphp
 
-        @foreach ($jenisKasus as $jenis)
-            <li class="menu-item {{ $currentUuid === $jenis->uuid ? 'active' : '' }}">
-                <a href="{{ route('monitoring.index', ['jenis_kasus_uuid' => $jenis->uuid]) }}" class="menu-link">
-                    <i class="menu-icon tf-icons ti ti-chevron-right"></i>
-                    <div>{{ $jenis->nama }}</div>
-                </a>
-            </li>
-        @endforeach
+        <li class="menu-item {{ request()->is('data/*') ? 'active open' : '' }}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon ti ti-file-analytics"></i>
+                <div>Data Monitoring</div>
+            </a>
+
+            <ul class="menu-sub">
+
+                @foreach ($jenisKasus as $jk)
+                    @php
+                        // apakah ini jenis kasus yg sedang dibuka?
+                        $isActiveJenis = $currentUuid === $jk->uuid;
+                    @endphp
+
+                    <li class="menu-item {{ $isActiveJenis ? 'active open' : '' }}">
+                        <a href="javascript:void(0);" class="menu-link menu-toggle">
+                            <div>{{ $jk->nama }}</div>
+                        </a>
+
+                        <ul class="menu-sub">
+
+                            {{-- Monitoring --}}
+                            <li class="menu-item 
+                                {{ $isActiveJenis && request()->routeIs('monitoring.*') ? 'active' : '' }}">
+                                <a href="{{ route('monitoring.index', $jk->uuid) }}" class="menu-link">
+                                    <div>Monitoring Kelurahan</div>
+                                </a>
+                            </li>
+
+                            {{-- Monitoring RT --}}
+                            <li class="menu-item 
+                                {{ $isActiveJenis && request()->routeIs('monitoring-rt.*') ? 'active' : '' }}">
+                                <a href="{{ route('monitoring-rt.index', $jk->uuid) }}" class="menu-link">
+                                    <div>Monitoring RT</div>
+                                </a>
+                            </li>
+
+                        </ul>
+                    </li>
+
+                @endforeach
+
+            </ul>
+        </li>
 
         @endcan
 
@@ -161,11 +196,32 @@
                 </li>
             </ul>
         @endcan
+
         @can('kelurahan-index')
             <ul class="menu-sub">
                 <li class="menu-item ">
                     <a href="{{ route('kelurahan.index') }}" class="menu-link">
                         <div>Kelurahan</div>
+                    </a>
+                </li>
+            </ul>
+        @endcan
+
+        @can('rw-index')
+            <ul class="menu-sub">
+                <li class="menu-item ">
+                    <a href="{{ route('rw.index') }}" class="menu-link">
+                        <div>RW</div>
+                    </a>
+                </li>
+            </ul>
+        @endcan
+
+        @can('rt-index')
+            <ul class="menu-sub">
+                <li class="menu-item ">
+                    <a href="{{ route('rt.index') }}" class="menu-link">
+                        <div>RT</div>
                     </a>
                 </li>
             </ul>

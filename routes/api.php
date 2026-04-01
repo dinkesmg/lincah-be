@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::middleware('api_key')->group(function () {
+    //MASTER
     Route::get('stats', [WebController::class, 'stats']);
     Route::get('linsek', [WebController::class, 'linsek']);
     Route::get('kecamatan', [WebController::class, 'kecamatan']);
@@ -24,6 +25,7 @@ Route::middleware('api_key')->group(function () {
     Route::get('jenis-resiko', [WebController::class, 'jenisResiko']);
     Route::get('tahun', [WebController::class, 'tahun']);
 
+    //KELURAHAN
     Route::get('data/all', [WebController::class, 'all']);
     Route::get('data/kerentanan', [WebController::class, 'kerentanan']);
     Route::get('data/keterpaparan', [WebController::class, 'keterpaparan']);
@@ -37,7 +39,11 @@ Route::middleware('api_key')->group(function () {
     Route::get('spasial/jumlah-kasus', [WebController::class, 'spasialJumlahKasus']);
     
     Route::get('tabel-data', [WebController::class, 'tabelData']);
+
+    //RT
+    Route::get('tabel-data-rt', [WebController::class, 'tabelDataRt']);
     
+    //CONTENT
     Route::get('publikasi', [WebController::class, 'publikasi']);
     Route::get('publikasi/foto', [WebController::class, 'publikasiFoto']);
     Route::get('publikasi/video', [WebController::class, 'publikasiVideo']);
