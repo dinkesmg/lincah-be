@@ -51,7 +51,8 @@ class UserController extends Controller
     } else {
       $roles = Role::where('name', '!=', 'SUPERADMIN')->get();
     }
-    return view('backend.user.create', compact('roles'));
+    $kelurahan = Kelurahan::get();
+    return view('backend.user.create', compact('roles', 'kelurahan'));
   }
 
   /**
