@@ -24,8 +24,8 @@ class ForumResource extends JsonResource
     {
         $tanggal = null;
 
-        if ($this->created_at) {
-            $tanggal = Carbon::parse($this->created_at)
+        if ($this->tanggal) {
+            $tanggal = Carbon::parse($this->tanggal)
                 ->locale('id')
                 ->translatedFormat(', d F Y');
         }
@@ -38,7 +38,9 @@ class ForumResource extends JsonResource
             'judul' => $this->judul,
             'hasil' => Str::limit(strip_tags($this->hasil), 100, '...'),
             'foto' => $this->foto ? url('storage/' . $this->foto) : null,
-            'created_at' => $tanggal,
+            'created_at' => $tanggal ?? Carbon::parse($this->created_at)
+                ->locale('id')
+                ->translatedFormat(', d F Y'),
         ];
     }
 }
